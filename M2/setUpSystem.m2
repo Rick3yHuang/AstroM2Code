@@ -8,7 +8,7 @@ R = FF[-*p_(1,1),p_(1,2),p_(1,3),p_(1,4),p_(1,5),p_(2,1),p_(2,2),p_(2,3),p_(2,4)
     v_(1,2),v_(1,3),v_(2,1),v_(2,2),v_(2,3),-*u_(1,1),u_(1,2),u_(1,3),u_(1,4),
     u_(1,5),u_(2,1),u_(2,2),u_(2,3),u_(2,4),u_(2,5),u_(3,1),u_(3,2),u_(3,3),
     u_(3,4),u_(3,5),*-o_(1,1),o_(1,2),o_(1,3),o_(1,4),o_(1,5),o_(2,1),o_(2,2),
-    o_(2,3),o_(2,4),o_(2,5),c_1,c_2,c_3,c_4,c_5,c_6,F1,F2]
+    o_(2,3),o_(2,4),o_(2,5),c_1,c_2,c_3,c_4,c_5,c_6]
 
 ------------------------------ Small functions that will be used ---------------------------------
 -- Cross Product
@@ -59,7 +59,7 @@ funcStep1 = method(Vector,Vector,Vector) := (w,p,v) -> (
     )
 
 --- Outputs: each one of f1 and f2 is a list of three polynomials
--- v_2 = (w x p1)/|w x p1|
+-- v_2 = (w x u1)/|w x u1|
 f1 = funcStep1(w,u1,v_2)
 -- v_1 = (w x v_2)/|w x v_2|
 f2 = funcStep1(w,v_2,v_1)
@@ -79,17 +79,17 @@ o = matrix{{o_(1,1),o_(1,2),o_(1,3),o_(1,4),o_(1,5)},
 --- Detailed Procedure
 -- let pl denotes p^T·w, ul denotes u^T·w, and let r_i denotes the i^th obseration in the orginal
 -- coordinates. Then we have:
---    r_i = p_i+(pl_i/ul_i)·u_i and dot(v_j,r_i) = o_(j,i)
--- => dot(v_j,p_i+(pl_i/ul_i)·u_i) = o(j,i)
--- => dot(v_j,ul_i·p_i+pl_i·u_i) = ul_i·o_(j,i)
--- => ul_i·o_(j,i)-dot(v_j,ul_i·p_i+pl_i·u_i) = 0
+--    r_i = p_i+(-pl_i/ul_i)·u_i and dot(v_j,r_i) = o_(j,i)
+-- => dot(v_j,p_i+(-pl_i/ul_i)·u_i) = o(j,i)
+-- => dot(v_j,ul_i·p_i-pl_i·u_i) = ul_i·o_(j,i)
+-- => ul_i·o_(j,i)-dot(v_j,ul_i·p_i-pl_i·u_i) = 0
 funcStep2 = method(Matrix,Matrix,Vector,ZZ) := (p,u,w,j) -> (
     n := #entries(transpose p);
     f := new MutableList from {n:0};
     pl := (transpose p)*w;
     ul := (transpose u)*w;
     for i from 0 to n-1 do(
-    	f#i = ul_(i)*o_(j-1,i) - dot(v_(j),(ul_(i)*substitute(p_i,R)+pl_(i)*substitute(u_i,R)))
+    	f#i = ul_(i)*o_(j-1,i) - dot(v_(j),(ul_(i)*substitute(p_i,R)-pl_(i)*substitute(u_i,R)))
 	);
     return f;
     )
@@ -137,11 +137,11 @@ f5 = funcStep3(tA,c)
 Q = matrix {{c_(0),c_(1),c_(3)},{c_(1),c_(2),c_(4)},{c_(3),c_(4),c_(5)}}
 
 --- Output: f6 and f7 are two polynomials
-f6 = F1 - Q_(1,2)^2-Q_(1,1)*Q_(2,2)-Q_(0,2)^2+Q_(0,0)*Q_(2,2)
-f7 = F2 - 2*(Q_(0,2)*Q_(1,2)-Q_(0,1)*Q_(2,2))
-
+f6 = Q_(1,2)^2-Q_(1,1)*Q_(2,2)-Q_(0,2)^2+Q_(0,0)*Q_(2,2)
+f7 = 2*(Q_(0,2)*Q_(1,2)-Q_(0,1)*Q_(2,2))
+f8 = dot(w,w)-1
 ------------------------------------ Set up the system --------------------------------------------
-f = flatten{toList f1,toList f2,toList f3,toList f4,toList f5,f6,f7}
+f = flatten{toList f1,toList f2,toList f3,toList f4,toList f5,f6,f7,f8}
 netList f
 I = ideal(f)
 end
@@ -150,6 +150,8 @@ restart
 recursionLimit = 100
 FF = ZZ/911
 load "setUpSystem.m2"
+gbTrace = 3
+gbI = ideal groebnerBasis(I, Strategy=>"F4"); 
 elapsedTime dim I
 degree I
 
